@@ -68,7 +68,7 @@ public class PerceptualHashGenerator {
     ///   - dctSize: The size of the DCT matrix used to generate the hash. Bigger sizes can
     ///   allow for more precise image comparisons, as more high-frequency data is preserved.
     public init(resizedSize: Int = 32, dctSize: Int = 8) throws {
-        
+
         // Check against wrong parameter configurations
         guard resizedSize > 0 else {
             throw PerceptualHashError.negativeOrZeroResizedSize
@@ -81,18 +81,18 @@ public class PerceptualHashGenerator {
         }
         self.resizedSize = resizedSize
         self.dctSize = dctSize
-        
+
         // Get Metal device
         guard let device = MTLCreateSystemDefaultDevice() else {
             throw PerceptualHashError.metalDeviceCreationFailed
         }
         self.device = device
-        
+
         // Get the default library
-        guard let defaultLibrary = device.makeDefaultLibrary() else {
+        guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: .module) else {
             throw PerceptualHashError.makeDefaultLibraryFailed
         }
-        
+
         // Create the grayscale kernel function
         guard let grayscaleKernel = defaultLibrary.makeFunction(name: "grayscale_kernel") else {
             throw PerceptualHashError.makeGrayscaleKernelFailed
@@ -153,6 +153,7 @@ public class PerceptualHashGenerator {
     // MARK: - Hashing
     
     /// Creates a `PerceptualHash` for an image using its raw data.
+    /// - Note: image represented by `imageData` must be already in standard image orientation (UIImage.Orientation.up).
     /// - Parameter imageData: The raw data for the image.
     /// - Returns: A `PerceptualHash` object, used to check how similar two images are.
     public func perceptualHash(imageData: Data) async throws -> PerceptualHash {
